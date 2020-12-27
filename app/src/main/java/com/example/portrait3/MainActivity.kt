@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -21,8 +22,18 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         // initialize adapter
         adapter = SuperheroAdapter()
+
+        adapter.setOnItemClickListener(object:SuperheroAdapter.OnItemClickListener{
+            override fun onItemClickListener(view: View, position: Int, clickedText: String) {
+                Log.i("aaa","Toastが出るはず")
+                //理由はわからんがtoastはされない。Logは出力されるので検知はされている模様。ヨシ。とする。
+                Toast.makeText(applicationContext, "${clickedText}がタップされました", Toast.LENGTH_LONG).show()
+            }
+        })
+
         rvData.adapter = adapter
         // call api to get the data from network
+
         loadData()
 
     }

@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="?selectableItemBackground"
-        android:clickable="true"
+
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
         android:paddingTop="12dp"
@@ -49,3 +49,4 @@
         android:background="#dedede"
         />
 </LinearLayout>
+<!--row13には[android:clickable="true"]が入っていたが、これが入っているとclickが動かないので削除-->
