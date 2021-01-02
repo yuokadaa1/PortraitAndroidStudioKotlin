@@ -1,5 +1,6 @@
 package com.example.portrait3
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -27,7 +28,11 @@ class MainActivity : AppCompatActivity() {
             override fun onItemClickListener(view: View, position: Int, clickedText: String) {
                 Log.i("aaa","Toastが出るはず")
                 //理由はわからんがtoastはされない。Logは出力されるので検知はされている模様。ヨシ。とする。
-                Toast.makeText(applicationContext, "${clickedText}がタップされました", Toast.LENGTH_LONG).show()
+//                Toast.makeText(applicationContext, "${clickedText}がタップされました", Toast.LENGTH_LONG).show()
+                //3.Intentクラスのオブジェクトを生成。
+                val intent = Intent(this@MainActivity, SubAcitivity::class.java)
+                //生成したオブジェクトを引数に画面を起動！
+                startActivity(intent)
             }
         })
 
