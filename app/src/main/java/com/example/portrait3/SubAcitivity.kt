@@ -15,7 +15,6 @@ class SubAcitivity :AppCompatActivity(){
 
         super.onCreate(savedInstanceState)
         var mSosotataImageView = SosotataImageView(this)
-//        mSosotataImageView.setImage(BitmapFactory.decodeResource(this.resources, R.drawable.android_robot))
 
         mBitmapList.add(BitmapFactory.decodeResource(this.resources, R.drawable.android_robot))
         mBitmapList.add(BitmapFactory.decodeResource(this.resources, R.drawable.android_robot2))

@@ -45,7 +45,9 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
     // 画像の配列のインデックスの最小値
     private var mPositionMax = 0
     // 画像切り替え後、初めてのonDrawかどうか
-    private val isChangedFirstDraw = true
+    private var isChangedFirstDraw = true
+    // 表示している画像の縮尺
+    private var mLastScaleFactor = 1.0f
 
 
     /**
@@ -259,8 +261,6 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
         this.mBitmapList = bitmapList
         // 最大値を初期化
         this.mPositionMax = bitmapList.size - 1
-        Log.i("setBitmapList","最大値:" + mPositionMax + ",最小値"  + mPositionMin + "現在" + mBitmapPosition)
-
         this.setImage(mBitmapList[mBitmapPosition]!!)
     }
 
@@ -297,6 +297,19 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        if(isChangedFirstDraw == true){
+            isChangedFirstDraw = false
+            // 画面の横幅に画像の横を合わせるには何倍すればいいか
+            val scaleX = width.toFloat() / mBitmapList[mBitmapPosition]!!.width
+            // 画面の横幅に画像の横を合わせるには何倍すればいいか
+            val scaleY = height.toFloat() / mBitmapList[mBitmapPosition]!!.height
+            // 小さいほうを適応させる
+            mLastScaleFactor = Math.min(scaleX, scaleY)
+            mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0F, 0F)
+            // バイブレーション
+            // mRenderMatrix.vibrate(200)
+            isChangedFirstDraw = false
+        }
         if (::mRenderBitmap.isInitialized) {
             canvas.drawBitmap(mRenderBitmap, mRenderMatrix, null)
         }
@@ -481,7 +494,6 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
     }
 
     override fun onDoubleTap(e: MotionEvent?): Boolean {
-        Log.i("onDoubleTap", "onDoubleTapされましｔ")
 
         mBitmapPosition++
         //画像が最後尾に行った状態でダブルクリックされた場合は最初に戻す
@@ -489,7 +501,8 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
             mBitmapPosition = mPositionMin
         }
 
-        Log.i("setBitmapList","最大値:" + mPositionMax + ",最小値"  + mPositionMin + "現在" + mBitmapPosition)
+        isChangedFirstDraw = true
+
         this.setImage(mBitmapList[mBitmapPosition]!!)
         return true
     }
