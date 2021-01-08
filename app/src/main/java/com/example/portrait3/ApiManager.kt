@@ -1,22 +1,30 @@
 package com.example.portrait3
 
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
+//こいつの呼ばれ順　getInstance->init->createService
+
 class ApiManager {
 
     private var apiService: ApiService? = null
     init {
+        Log.i("挙動の確認:ApiManager","init")
         createService()
     }
 
     val service: ApiService get() = apiService!!
 
     private fun createService() {
+
+        Log.i("挙動の確認:ApiManager","createService")
 
         val loggingInterceptor =
             HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
@@ -34,12 +42,15 @@ class ApiManager {
             .addInterceptor(loggingInterceptor)
             .build()
 
+        //これ追加していいのかは不明
+        val gson = GsonBuilder().setLenient().create()
+
         val retrofit: Retrofit = Retrofit.Builder()
             .client(client)
-//            .baseUrl("https://thesimplycoder.herokuapp.com/")
-//            .baseUrl("https://script.google.com/macros/s/AKfycbzoAamQ3SjcfleexVsM-6yXZaG5FacymUIL3IhGEMsoNKsir5PV/exec")
             .baseUrl("https://script.google.com/")
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            //gson追加なしがコピペ状態
+            //.addConverterFactory(GsonConverterFactory.create())
             .build()
         apiService = retrofit.create<ApiService>(ApiService::class.java)
     }
@@ -48,6 +59,7 @@ class ApiManager {
         private var instance: ApiManager? = null
         fun getInstance(): ApiManager {
             return instance ?: synchronized(this) {
+                Log.i("挙動の確認:ApiManager","getInstance")
                 ApiManager().also { instance = it }
             }
         }

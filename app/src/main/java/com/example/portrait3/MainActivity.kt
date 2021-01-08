@@ -26,12 +26,10 @@ class MainActivity : AppCompatActivity() {
 
         adapter.setOnItemClickListener(object:SuperheroAdapter.OnItemClickListener{
             override fun onItemClickListener(view: View, position: Int, clickedText: String) {
-                Log.i("aaa","Toastが出るはず")
-                //理由はわからんがtoastはされない。Logは出力されるので検知はされている模様。ヨシ。とする。
-                //Toast.makeText(applicationContext, "${clickedText}がタップされました", Toast.LENGTH_LONG).show()
-                //3.Intentクラスのオブジェクトを生成。
+                Log.i("挙動の確認:MainActivity","Toastが出るはず")
+
                 val intent = Intent(this@MainActivity, SubAcitivity::class.java)
-                //生成したオブジェクトを引数に画面を起動！
+                intent.putExtra("folderUrl", clickedText)
                 startActivity(intent)
             }
         })
@@ -46,12 +44,16 @@ class MainActivity : AppCompatActivity() {
     private fun loadData() {
         // show loading progress bar
         pbLoading.visibility = View.VISIBLE
+        Log.i("挙動の確認:MainActivity","loadData")
+
         ApiManager.getInstance().service.listHeroes()
             .enqueue(object : Callback<ResponseData<List<Superhero>>> {
                 override fun onResponse(
                     call: Call<ResponseData<List<Superhero>>>,
                     response: Response<ResponseData<List<Superhero>>>
                 ) {
+                    Log.i("挙動の確認:MainActivity","listDataの上")
+
                     val listData: List<Superhero> = response.body()!!.data
                     // updating data from network to adapter
                     itemList.clear()

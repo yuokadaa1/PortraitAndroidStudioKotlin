@@ -34,7 +34,7 @@ class SuperheroAdapter : RecyclerView.Adapter<SuperheroAdapter.ViewHolder>() {
         holder.bind()
 
         holder.itemView.setOnClickListener {
-            listener.onItemClickListener(it, position, itemList.get(position).toString())
+            listener.onItemClickListener(it, position, itemList.get(position).name)
         }
 
     }
