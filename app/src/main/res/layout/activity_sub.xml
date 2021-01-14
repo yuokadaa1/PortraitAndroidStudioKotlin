@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:id="@+id/subLayout">
 
-    <com.example.portrait3.AndroidRobotView
+    <com.example.portrait3.SosotataImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:ignore="MissingClass" />

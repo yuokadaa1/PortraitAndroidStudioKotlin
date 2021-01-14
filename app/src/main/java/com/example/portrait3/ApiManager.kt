@@ -16,15 +16,12 @@ class ApiManager {
 
     private var apiService: ApiService? = null
     init {
-        Log.i("挙動の確認:ApiManager","init")
         createService()
     }
 
     val service: ApiService get() = apiService!!
 
     private fun createService() {
-
-        Log.i("挙動の確認:ApiManager","createService")
 
         val loggingInterceptor =
             HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
@@ -59,7 +56,6 @@ class ApiManager {
         private var instance: ApiManager? = null
         fun getInstance(): ApiManager {
             return instance ?: synchronized(this) {
-                Log.i("挙動の確認:ApiManager","getInstance")
                 ApiManager().also { instance = it }
             }
         }

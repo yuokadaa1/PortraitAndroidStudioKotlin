@@ -1,12 +1,18 @@
 package com.example.portrait3
 
 import android.content.Intent
+import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import com.google.gson.JsonObject
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -26,11 +32,31 @@ class MainActivity : AppCompatActivity() {
 
         adapter.setOnItemClickListener(object:SuperheroAdapter.OnItemClickListener{
             override fun onItemClickListener(view: View, position: Int, clickedText: String) {
-                Log.i("挙動の確認:MainActivity","Toastが出るはず")
 
                 val intent = Intent(this@MainActivity, SubAcitivity::class.java)
-                intent.putExtra("folderUrl", clickedText)
-                startActivity(intent)
+                val sendJson = JsonObject()
+                sendJson.addProperty("folderID", clickedText)
+
+                GlobalScope.launch(Dispatchers.Main) {
+                    var response: Response<ResponseData<List<Superhero>>>
+                    response = withContext(Dispatchers.Default) {
+                        getImageURL(sendJson)
+                    }
+                    val listData: List<Superhero> = response.body()!!.data
+                    itemList.clear()
+                    itemList.addAll(listData)
+                    val aaa: MutableList<String> = ArrayList()
+                    itemList.forEach{ i ->
+                        aaa.add(i.photo)
+                    }
+                    intent.putStringArrayListExtra("folderUrl", aaa as ArrayList<String>)
+                    startActivity(intent)
+                }
+                // Log.i(TAG,"停止の確認②")
+                // Log.i(TAG,"set,mBitmapList:" + itemList.size)
+                //
+                // intent.putExtra("folderUrl", clickedText)
+                // startActivity(intent)
             }
         })
 
@@ -44,7 +70,6 @@ class MainActivity : AppCompatActivity() {
     private fun loadData() {
         // show loading progress bar
         pbLoading.visibility = View.VISIBLE
-        Log.i("挙動の確認:MainActivity","loadData")
 
         ApiManager.getInstance().service.listHeroes()
             .enqueue(object : Callback<ResponseData<List<Superhero>>> {
@@ -52,8 +77,6 @@ class MainActivity : AppCompatActivity() {
                     call: Call<ResponseData<List<Superhero>>>,
                     response: Response<ResponseData<List<Superhero>>>
                 ) {
-                    Log.i("挙動の確認:MainActivity","listDataの上")
-
                     val listData: List<Superhero> = response.body()!!.data
                     // updating data from network to adapter
                     itemList.clear()
@@ -69,4 +92,9 @@ class MainActivity : AppCompatActivity() {
                 }
             })
     }
+
+    suspend fun getImageURL(sendJson: JsonObject): Response<ResponseData<List<Superhero>>> {
+        return ApiManager.getInstance().service.post(sendJson).execute()
+    }
+
 }

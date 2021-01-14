@@ -262,6 +262,8 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
         // 最大値を初期化
         this.mPositionMax = bitmapList.size - 1
         this.setImage(mBitmapList[mBitmapPosition]!!)
+        Log.i("setBitmapList","起動確認")
+        Log.i("setBitmapList",bitmapList.size.toString())
     }
 
     /**
@@ -495,7 +497,10 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
 
     override fun onDoubleTap(e: MotionEvent?): Boolean {
 
-        mBitmapPosition++
+        Log.i("Sosotata","DoubleClickされました:" + mBitmapPosition)
+
+        if(mPositionMax != 1){mBitmapPosition++}
+
         //画像が最後尾に行った状態でダブルクリックされた場合は最初に戻す
         if(mBitmapPosition > mPositionMax){
             mBitmapPosition = mPositionMin
