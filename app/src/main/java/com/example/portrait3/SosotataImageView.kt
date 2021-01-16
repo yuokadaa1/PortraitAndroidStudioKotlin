@@ -243,6 +243,8 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
 
     //constructor追加してみる？何だろうね？
     constructor(context: Context) : super(context) {
+        //setContentViewでonDrawを起動してしまうのでここで自動起動をoffにする。
+        this.setWillNotDraw(true)
     }
 
     /**
@@ -252,12 +254,13 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
         mRenderBitmap = bmp
         updateScaleLimit()
         updateTranslateLimit()
-        renderBitmap()
+        renderBitmap()//ここでonDrawを呼んでいる
         mFlingTask.fling(0F, 0F, true)
     }
 
     fun setBitmapList(bitmapList: List<Bitmap?>) {
         // 外部から画像の配列を取り入れる。
+        this.setWillNotDraw(false)
         this.mBitmapList = bitmapList
         // 最大値を初期化
         this.mPositionMax = bitmapList.size - 1
@@ -299,15 +302,39 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         if(isChangedFirstDraw == true){
             isChangedFirstDraw = false
+
             // 画面の横幅に画像の横を合わせるには何倍すればいいか
-            val scaleX = width.toFloat() / mBitmapList[mBitmapPosition]!!.width
+            //何かよくわからないけど10倍すると数があう・・・1920*1080 : 125*150 でほぼ 1 : 1 何だろうね？
+
+            val scaleX = width.toFloat() / (mBitmapList[mBitmapPosition]!!.width * 10)
             // 画面の横幅に画像の横を合わせるには何倍すればいいか
-            val scaleY = height.toFloat() / mBitmapList[mBitmapPosition]!!.height
-            // 小さいほうを適応させる
-            mLastScaleFactor = Math.min(scaleX, scaleY)
+
+            val scaleY = height.toFloat() / (mBitmapList[mBitmapPosition]!!.height  * 10)
+            // 小さいほうを適応させる、縦横どちらも画面より小さい場合は初期値（等倍）のまま。
+            // if(scaleX > 1 && scaleY > 1){}else{
+                mLastScaleFactor = Math.min(scaleX, scaleY)
+            // }
+            Log.i("scaleサイズ：","width.toFloat()：" + width.toFloat())
+            Log.i("scaleサイズ：","height.toFloat()：" + height.toFloat())
+            Log.i("scaleサイズ：","mBitmapList[mBitmapPosition]!!.width：" + mBitmapList[mBitmapPosition]!!.width)
+            Log.i("scaleサイズ：","mBitmapList[mBitmapPosition]!!.height：" + mBitmapList[mBitmapPosition]!!.height)
+            Log.i("scaleサイズ：","mScaleLimit：" + mScaleLimit)
+            Log.i("scaleサイズ：","mLastScaleFactor：" + mLastScaleFactor)
+
+
+
+            //画像を画面中心に配置する。
+            //ここに480行目あたりの位置調整を移植してpostscaleにセットする
             mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0F, 0F)
+            // mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0F, 0F)
+
+            // val scaleY = height.toFloat() / mBitmapList[mBitmapPosition]!!.height  * mScaleLimit
+            // val scaleX = width.toFloat() / mBitmapList[mBitmapPosition]!!.width
+            // mLastScaleFactor = Math.min(scaleX, scaleY)
+            // mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0F, 0F)
             // バイブレーション
             // mRenderMatrix.vibrate(200)
             isChangedFirstDraw = false
@@ -411,6 +438,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.ScaleGestureDetector.OnScaleGestureListener.onScale]
      */
     override fun onScale(detector: ScaleGestureDetector): Boolean {
+        Log.i("onScaleの開始","")
         val scale = detector.currentSpan / detector.previousSpan
         val values = FloatArray(9)
         mRenderMatrix.getValues(values)
@@ -438,6 +466,9 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
             // 縮小限界値を画像の縦、横で短い方が画面サイズと一致するまでにする。
             // 最大は無限。
             mScaleLimit = if (widthLimit < heightLimit) widthLimit else heightLimit
+            Log.i("限界地","widthLimit:" + widthLimit)
+            Log.i("限界地","widthLimit:" + heightLimit)
+            Log.i("限界地","widthLimit:" + mScaleLimit)
         }
     }
 
@@ -499,7 +530,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
 
         Log.i("Sosotata","DoubleClickされました:" + mBitmapPosition)
 
-        if(mPositionMax != 1){mBitmapPosition++}
+        if(mPositionMax != 0){mBitmapPosition++}
 
         //画像が最後尾に行った状態でダブルクリックされた場合は最初に戻す
         if(mBitmapPosition > mPositionMax){
