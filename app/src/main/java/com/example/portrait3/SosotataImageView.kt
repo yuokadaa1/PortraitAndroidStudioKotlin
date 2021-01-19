@@ -11,9 +11,11 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import androidx.core.graphics.scale
 import androidx.core.view.GestureDetectorCompat
 import kotlinx.coroutines.*
 import kotlin.math.abs
+import kotlin.properties.Delegates
 
 /**
  * 画像を拡大縮小、縦横斜めの慣性スロール対応カスタムイメージビュー
@@ -49,11 +51,15 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
     // 表示している画像の縮尺
     private var mLastScaleFactor = 1.0f
 
+    var vwWidth by Delegates.notNull<Float>()    //ViewWidgetの横幅
+    var vwHeight by Delegates.notNull<Float>() //ViewWidgetの縦幅
+
 
     /**
      * フリック操作時の慣性スクロールを制御するタスク
      */
     inner class FlingTask {
+
         /** 慣性スクロール制御コルーチン */
         private lateinit var flingCoroutine: FlingCoroutine
 
@@ -64,6 +70,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
          * @param restart 実行中に再スタートする
          * */
         fun fling(velocityX: Float, velocityY: Float, restart: Boolean) {
+            Log.i("FlingTask","の起動")
             if (::flingCoroutine.isInitialized) {
                 if (!restart && flingCoroutine.isFling) {
                     return
@@ -78,6 +85,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
          * 慣性スクロール制御コルーチン
          */
         inner class FlingCoroutine {
+
             /** スコープ */
             private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -89,6 +97,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
              * @param velocityY 縦方向の加速度（フリックの強さとして使用する）
              * */
             fun fling(velocityX: Float, velocityY: Float) {
+                Log.i("FlingCoroutine","の起動")
                 isFling = true
 
                 scope.launch {
@@ -108,6 +117,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
                     // 慣性スクロールループ
                     //
                     while (isActive) {
+                        Log.i("FlingCoroutine","慣性スクロールループの起動")
                         translate(vx, vy)
                         mRenderMatrix.getValues(mtr)
 
@@ -251,28 +261,37 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * 描画用ビットマップを設定する
      */
     fun setImage(bmp: Bitmap) {
+        Log.i("setImage","の起動")
         mRenderBitmap = bmp
         updateScaleLimit()
         updateTranslateLimit()
         renderBitmap()//ここでonDrawを呼んでいる
-        mFlingTask.fling(0F, 0F, true)
+       // なにかよくわからんけどここを有効にするとonDraw（などなど）が呼び出されまくる
+       mFlingTask.fling(0F, 0F, true)
     }
 
     fun setBitmapList(bitmapList: List<Bitmap?>) {
+
+        Log.i("setBitmapList", "起動確認")
+
+        //ViewWidgetのサイズを取得
+        vwWidth = this.width.toFloat()
+        vwHeight = this.height.toFloat()
+
         // 外部から画像の配列を取り入れる。
         this.setWillNotDraw(false)
         this.mBitmapList = bitmapList
         // 最大値を初期化
         this.mPositionMax = bitmapList.size - 1
         this.setImage(mBitmapList[mBitmapPosition]!!)
-        Log.i("setBitmapList","起動確認")
-        Log.i("setBitmapList",bitmapList.size.toString())
+
     }
 
     /**
      * 描画を更新する
      */
     fun renderBitmap() {
+        Log.i("renderBitmap","の起動")
         invalidate()
     }
 
@@ -280,6 +299,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.View.onSizeChanged]
      */
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        Log.i("onSizeChanged","の起動")
         super.onSizeChanged(w, h, oldw, oldh)
 
         if (w > 0 && h > 0) {
@@ -301,53 +321,58 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.View.onDraw]
      */
     override fun onDraw(canvas: Canvas) {
+        Log.i("onDraw","onDrawの起動")
         super.onDraw(canvas)
 
         if(isChangedFirstDraw == true){
-            isChangedFirstDraw = false
 
             // 画面の横幅に画像の横を合わせるには何倍すればいいか
-            //何かよくわからないけど10倍すると数があう・・・1920*1080 : 125*150 でほぼ 1 : 1 何だろうね？
-
-            val scaleX = width.toFloat() / (mBitmapList[mBitmapPosition]!!.width * 10)
+            val scaleX = vwWidth / (mBitmapList[mBitmapPosition]!!.width * mScaleLimit)
+            // val scaleX = vwWidth / mBitmapList[mBitmapPosition]!!.width * Matrix.MSCALE_X
             // 画面の横幅に画像の横を合わせるには何倍すればいいか
-
-            val scaleY = height.toFloat() / (mBitmapList[mBitmapPosition]!!.height  * 10)
-            // 小さいほうを適応させる、縦横どちらも画面より小さい場合は初期値（等倍）のまま。
-            // if(scaleX > 1 && scaleY > 1){}else{
-                mLastScaleFactor = Math.min(scaleX, scaleY)
-            // }
-            Log.i("scaleサイズ：","width.toFloat()：" + width.toFloat())
-            Log.i("scaleサイズ：","height.toFloat()：" + height.toFloat())
-            Log.i("scaleサイズ：","mBitmapList[mBitmapPosition]!!.width：" + mBitmapList[mBitmapPosition]!!.width)
-            Log.i("scaleサイズ：","mBitmapList[mBitmapPosition]!!.height：" + mBitmapList[mBitmapPosition]!!.height)
-            Log.i("scaleサイズ：","mScaleLimit：" + mScaleLimit)
-            Log.i("scaleサイズ：","mLastScaleFactor：" + mLastScaleFactor)
-
-
-
+            val scaleY = vwHeight / (mBitmapList[mBitmapPosition]!!.height * mScaleLimit)
+            // 小さいほうを適応させる
+            mLastScaleFactor = Math.min(scaleX, scaleY)
             //画像を画面中心に配置する。
-            //ここに480行目あたりの位置調整を移植してpostscaleにセットする
-            mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0F, 0F)
-            // mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0F, 0F)
+            // mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0f,0f)
 
-            // val scaleY = height.toFloat() / mBitmapList[mBitmapPosition]!!.height  * mScaleLimit
-            // val scaleX = width.toFloat() / mBitmapList[mBitmapPosition]!!.width
-            // mLastScaleFactor = Math.min(scaleX, scaleY)
-            // mRenderMatrix.postScale(mLastScaleFactor, mLastScaleFactor, 0F, 0F)
-            // バイブレーション
-            // mRenderMatrix.vibrate(200)
-            isChangedFirstDraw = false
+            //どうも、onDraw以外でのmRenderMatrix編集で位置はずれてしまっている模様
+            val dx = Math.round((vwWidth - mBitmapList[mBitmapPosition]!!.width * mScaleLimit) * 0.5f);
+            val dy = Math.round((vwHeight - mBitmapList[mBitmapPosition]!!.height * mScaleLimit) * 0.5f);
+            //Matrix.setXXは他のparmを初期化するのでsetTran->setScaleはsetTranが初期化される
+            mRenderMatrix.setScale(mScaleLimit, mScaleLimit)
+            mRenderMatrix.postTranslate(dx.toFloat(), dy.toFloat())
+
+
+            Log.i("onDraw","mScaleLimit:" + mScaleLimit)
+            Log.i("onDraw","dx:" + dx)
+            Log.i("onDraw","dy:" + dy)
+
+
         }
+
         if (::mRenderBitmap.isInitialized) {
+            Log.i("onDraw","canvas.drawBitmapの起動")
+
+            val values3 = FloatArray(9)
+            mRenderMatrix.getValues(values3)
+            Log.i("onDraw", "valuesX" + values3[0].toString())
+            Log.i("onDraw", "valuesY" + values3[4].toString())
+            Log.i("onDraw", "valuesXpo" + values3[2].toString())
+            Log.i("onDraw", "valuesYpo" + values3[5].toString())
+
             canvas.drawBitmap(mRenderBitmap, mRenderMatrix, null)
         }
+
     }
 
     /**
      * [android.view.View.onTouchEvent]
      */
     override fun onTouchEvent(e: MotionEvent): Boolean {
+
+        Log.i("onTouchEvent","の起動")
+
         mGestureDetector.onTouchEvent(e)
         mScaleGestureDetector.onTouchEvent(e)
 
@@ -371,6 +396,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.GestureDetector.OnGestureListener.onSingleTapUp]
      */
     override fun onSingleTapUp(e: MotionEvent?): Boolean {
+        Log.i("onSingleTapUp","の起動")
         return true
     }
 
@@ -378,6 +404,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.GestureDetector.OnGestureListener.onDown]
      */
     override fun onDown(e: MotionEvent?): Boolean {
+        Log.i("onDown","の起動")
         return true
     }
 
@@ -385,6 +412,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.GestureDetector.OnGestureListener.onFling]
      */
     override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+        Log.i("onFling","の起動")
         mFlingTask.fling(velocityX, velocityY, true)
         return true
     }
@@ -393,6 +421,12 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.GestureDetector.OnGestureListener.onScroll]
      */
     override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, distanceX: Float, distanceY: Float): Boolean {
+
+        Log.i("onScroll","の起動")
+
+        //onDrawはflingのwhile(activ)で何回も起動するので、画像サイズの変更有無で初回Drawを判定する
+        isChangedFirstDraw = false
+
         var dx: Float = -distanceX
         var dy: Float = -distanceY
 
@@ -419,12 +453,14 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.GestureDetector.OnGestureListener.onLongPress]
      */
     override fun onLongPress(e: MotionEvent?) {
+        Log.i("onLongPress","の起動")
     }
 
     /**
      * [android.view.ScaleGestureDetector.OnScaleGestureListener.onScaleBegin]
      */
     override fun onScaleBegin(e: ScaleGestureDetector?): Boolean {
+        Log.i("onScaleBegin","の起動")
         return true
     }
 
@@ -432,21 +468,23 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * [android.view.ScaleGestureDetector.OnScaleGestureListener.onScaleEnd]
      */
     override fun onScaleEnd(detector: ScaleGestureDetector?) {
+        Log.i("onScaleEnd","の起動")
     }
 
     /**
      * [android.view.ScaleGestureDetector.OnScaleGestureListener.onScale]
      */
     override fun onScale(detector: ScaleGestureDetector): Boolean {
-        Log.i("onScaleの開始","")
+        Log.i("onScale","の起動")
         val scale = detector.currentSpan / detector.previousSpan
         val values = FloatArray(9)
         mRenderMatrix.getValues(values)
         if (values[Matrix.MSCALE_X] * scale <= mScaleLimit) {
-            // 縮小限界値で止める
+            // 縮小限界値で止める。ここが限界まで縮小したときの処理（初期表示にしたい）
             values[Matrix.MSCALE_X] = mScaleLimit
             values[Matrix.MSCALE_Y] = mScaleLimit
             mRenderMatrix.setValues(values)
+            Log.i("onScale","mRenderMatrix" + mRenderMatrix.toString())
         } else {
             mRenderMatrix.postScale(scale, scale, detector.focusX, detector.focusY)
         }
@@ -459,16 +497,14 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * 縮小限界値を更新する
      */
     private fun updateScaleLimit() {
+        Log.i("updateScaleLimit","の起動")
         if (::mRenderBitmap.isInitialized) {
             val widthLimit: Float = this.width.toFloat() / mRenderBitmap.width.toFloat()
             val heightLimit: Float = this.height.toFloat() / mRenderBitmap.height.toFloat()
 
-            // 縮小限界値を画像の縦、横で短い方が画面サイズと一致するまでにする。
-            // 最大は無限。
+            // 縮小限界値を画像の縦、横で短い方が画面サイズと一致するまでにする。最大は無限。
             mScaleLimit = if (widthLimit < heightLimit) widthLimit else heightLimit
-            Log.i("限界地","widthLimit:" + widthLimit)
-            Log.i("限界地","widthLimit:" + heightLimit)
-            Log.i("限界地","widthLimit:" + mScaleLimit)
+            Log.i("updateScaleLimit","mScaleLimit:" + mScaleLimit)
         }
     }
 
@@ -478,6 +514,7 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * @param distanceY 縦方向の移動距離
      */
     private fun translate(distanceX: Float, distanceY: Float) {
+        Log.i("translate","の起動")
         val values = FloatArray(9)
         mRenderMatrix.getValues(values)
         if (values[Matrix.MSCALE_X] < mScaleLimit) {
@@ -495,13 +532,13 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
      * 移動限界値を更新する
      */
     private fun updateTranslateLimit() {
+        Log.i("updateTranslateLimit","の起動")
         if (::mRenderBitmap.isInitialized) {
             val values = FloatArray(9)
             mRenderMatrix.getValues(values)
-            val vwWidth: Float = this.width.toFloat()
-            val vwHeight: Float = this.height.toFloat()
-            val scaleWidth = mRenderBitmap.width.toFloat() * values[Matrix.MSCALE_X]
-            val scaleHeight = mRenderBitmap.height.toFloat() * values[Matrix.MSCALE_Y]
+
+            val scaleWidth = mRenderBitmap.width.toFloat() * values[Matrix.MSCALE_X]    //画像の横幅
+            val scaleHeight = mRenderBitmap.height.toFloat() * values[Matrix.MSCALE_Y]  //画像の縦幅
 
             if (scaleWidth < vwWidth) {
                 // 縮小で画面サイズを超える場合、画像が中央寄せで左右に余白ができるよう限界値を調整する
@@ -528,13 +565,29 @@ class SosotataImageView : View, GestureDetector.OnGestureListener, ScaleGestureD
 
     override fun onDoubleTap(e: MotionEvent?): Boolean {
 
-        Log.i("Sosotata","DoubleClickされました:" + mBitmapPosition)
+        Log.i("onDoubleTap", "DoubleClickされました:" + mBitmapPosition)
 
-        if(mPositionMax != 0){mBitmapPosition++}
 
         //画像が最後尾に行った状態でダブルクリックされた場合は最初に戻す
-        if(mBitmapPosition > mPositionMax){
-            mBitmapPosition = mPositionMin
+        // if(mPositionMax != 0){mBitmapPosition++}
+        // if(mBitmapPosition > mPositionMax){
+        //     mBitmapPosition = mPositionMin
+        // }
+
+        if (e!!.x > this.width / 2) {
+            // 画面右側だったら画像を一個進める
+            mBitmapPosition++
+            // 限界を超えたら一番前に戻る
+            if (mBitmapPosition > mPositionMax) {
+                mBitmapPosition = mPositionMin
+            }
+        } else {
+            // 画面左側だったら画像を一個戻す
+            mBitmapPosition--
+            // 限界を下回ったら一番後ろにいく
+            if (mBitmapPosition < mPositionMin) {
+                mBitmapPosition = mPositionMax
+            }
         }
 
         isChangedFirstDraw = true

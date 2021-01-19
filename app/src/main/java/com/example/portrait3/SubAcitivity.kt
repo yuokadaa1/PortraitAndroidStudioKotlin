@@ -21,18 +21,18 @@ class SubAcitivity :AppCompatActivity(){
 
         super.onCreate(savedInstanceState)
 
-        Log.i(TAG,"故障個所の確認１")
         val mSosotataImageView = SosotataImageView(context)
         setContentView(mSosotataImageView)
+        // setContentView(R.layout.activity_sub)
+        // val ImageFreeShowerView = ImageFreeShowerView(context)
+        // setContentView(ImageFreeShowerView)
 
-        Log.i(TAG,"故障個所の確認２")
         val folderUrl = intent.getStringArrayListExtra("folderUrl")
         Log.i(TAG, folderUrl?.get(0).toString())
         val sendJson = JsonObject()
         sendJson.addProperty("folderID", folderUrl.toString())
 
         GlobalScope.launch(Dispatchers.Main) {
-            Log.i(TAG,"故障個所の確認２．１")
             withContext(Dispatchers.IO){
                 for (i in 0..folderUrl!!.size - 1 ) {
                     val url:String = folderUrl.get(i)
@@ -40,7 +40,7 @@ class SubAcitivity :AppCompatActivity(){
                     mBitmapList.add(bitmap!!)
                 }
             }
-            Log.i(TAG,"故障個所の確認３")
+            // ImageFreeShowerView.setBitmapList(mBitmapList)
             mSosotataImageView.setBitmapList(mBitmapList)
         }
     }
