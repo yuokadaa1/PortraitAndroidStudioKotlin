@@ -21,21 +21,27 @@ class MainActivity : AppCompatActivity() {
 
     val TAG = MainActivity::class.java.name
     val itemList = ArrayList<Superhero>()
+    val itemList2 = ArrayList<Superhero>()
     lateinit var adapter: SuperheroAdapter
+    // lateinit var listData: List<Superhero>
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        // initialize adapter
-        adapter = SuperheroAdapter()
+    // }
+    //
+    // override fun onStart() {
+    //
+    //     super.onStart()
 
+        adapter = SuperheroAdapter()
         adapter.setOnItemClickListener(object:SuperheroAdapter.OnItemClickListener{
             override fun onItemClickListener(view: View, position: Int, clickedText: String) {
 
                 val intent = Intent(this@MainActivity, SubAcitivity::class.java)
                 val sendJson = JsonObject()
                 sendJson.addProperty("folderID", clickedText)
+                Log.i("onCreate","clickedText:" + clickedText)
 
                 GlobalScope.launch(Dispatchers.Main) {
                     var response: Response<ResponseData<List<Superhero>>>
@@ -43,26 +49,20 @@ class MainActivity : AppCompatActivity() {
                         getImageURL(sendJson)
                     }
                     val listData: List<Superhero> = response.body()!!.data
-                    itemList.clear()
-                    itemList.addAll(listData)
+                    itemList2.clear()
+                    itemList2.addAll(listData)
                     val aaa: MutableList<String> = ArrayList()
-                    itemList.forEach{ i ->
+                    itemList2.forEach{ i ->
                         aaa.add(i.photo)
                     }
                     intent.putStringArrayListExtra("folderUrl", aaa as ArrayList<String>)
                     startActivity(intent)
                 }
-                // Log.i(TAG,"停止の確認②")
-                // Log.i(TAG,"set,mBitmapList:" + itemList.size)
-                //
-                // intent.putExtra("folderUrl", clickedText)
-                // startActivity(intent)
+
             }
         })
 
         rvData.adapter = adapter
-        // call api to get the data from network
-
         loadData()
 
     }
