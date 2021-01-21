@@ -34,13 +34,13 @@ class SuperheroAdapter : RecyclerView.Adapter<SuperheroAdapter.ViewHolder>() {
         holder.bind()
 
         holder.itemView.setOnClickListener {
-            listener.onItemClickListener(it, position, itemList.get(position).name)
+            listener.onItemClickListener(it, position, itemList.get(position).folderID)
         }
 
     }
 
     fun updateData(list: List<Superhero>) {
-        itemList = list;
+        itemList = list
         notifyDataSetChanged()
     }
 
@@ -48,13 +48,16 @@ class SuperheroAdapter : RecyclerView.Adapter<SuperheroAdapter.ViewHolder>() {
 
         fun bind() {
             val item = itemList.get(adapterPosition)
-            itemView.tvName.text = item.name
-            itemView.tvSuperheroName.text = item.superheroName
+            val fileNameArray = item.targetName.split("_")
+            itemView.tvtargetName.text = fileNameArray[1] + " Part" + item.countSubject
+            itemView.tvMakeY4MD.text = "更新日：" + fileNameArray[0].substring(0,4) + "/" + fileNameArray[0].substring(4,6) + "/" + fileNameArray[0].substring(6,8)
+            itemView.tvFileCount.text = "写真数：" + item.countFile.toString()
+
             Glide.with(context)
-                .load(item.photo)
+                .load(item.fileURL)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .circleCrop()
-                .into(itemView.ivPhoto)
+                .into(itemView.ivfileURL)
         }
 
     }

@@ -1,12 +1,10 @@
 package com.example.portrait3
 
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import com.google.gson.JsonObject
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +51,7 @@ class MainActivity : AppCompatActivity() {
                     itemList2.addAll(listData)
                     val aaa: MutableList<String> = ArrayList()
                     itemList2.forEach{ i ->
-                        aaa.add(i.photo)
+                        aaa.add(i.fileURL)
                     }
                     intent.putStringArrayListExtra("folderUrl", aaa as ArrayList<String>)
                     startActivity(intent)
